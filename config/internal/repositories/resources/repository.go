@@ -44,16 +44,31 @@ func GetById(id int64) (*models.Ressource, error) {
 	return &r, nil
 }
 
-func Create(name string, resType *string) (int64, error) {
+func Create(id int64, name string, resType *string) (int64, error) {
 	db, err := helpers.OpenDB()
 	if err != nil {
 		return 0, err
 	}
 	defer helpers.CloseDB(db)
 
-	res, err := db.Exec("INSERT INTO Ressource (name, type) VALUES (?, ?)", name, resType)
+	var query string
+	var args []interface{}
+
+	if id != 0 {
+		query = "INSERT INTO Ressource (id, name, type) VALUES (?, ?, ?)"
+		args = []interface{}{id, name, resType}
+	} else {
+		query = "INSERT INTO Ressource (name, type) VALUES (?, ?)"
+		args = []interface{}{name, resType}
+	}
+
+	res, err := db.Exec(query, args...)
 	if err != nil {
 		return 0, err
+	}
+
+	if id != 0 {
+		return id, nil
 	}
 	return res.LastInsertId()
 }

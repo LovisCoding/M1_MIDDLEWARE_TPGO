@@ -36,15 +36,15 @@ func GetResourceById(id int64) (*models.Ressource, error) {
 	return res, nil
 }
 
-func CreateResource(name string, resType *string) (int64, error) {
-	id, err := repository.Create(name, resType)
+func CreateResource(id int64, name string, resType *string) (int64, error) {
+	newId, err := repository.Create(id, name, resType)
 	if err != nil {
 		logrus.Errorf("error creating resource %s : %s", name, err.Error())
 		return 0, &models.ErrorGeneric{
 			Message: "Something went wrong while creating resource",
 		}
 	}
-	return id, nil
+	return newId, nil
 }
 
 func UpdateResource(id int64, name string, resType *string) error {

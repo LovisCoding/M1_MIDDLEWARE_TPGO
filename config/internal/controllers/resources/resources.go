@@ -66,7 +66,7 @@ func CreateResource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := resources.CreateResource(req.Name, req.Type)
+	id, err := resources.CreateResource(req.ID, req.Name, req.Type)
 	if err != nil {
 		helpers.RespondError(w, err)
 		return
