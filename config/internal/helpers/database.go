@@ -2,9 +2,13 @@ package helpers
 
 import (
 	"database/sql"
-	"github.com/sirupsen/logrus"
+
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/nats-io/nats.go"
+	"github.com/sirupsen/logrus"
 )
+
+var NatsConn *nats.Conn
 
 func OpenDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "file:config.db?_foreign_keys=on")

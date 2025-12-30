@@ -93,18 +93,28 @@ func main() {
 		}
 
 		// 5. Publish events to NATS
-		data, err := json.Marshal(events)
-		if err != nil {
-			log.Printf("Error marshaling events: %v", err)
-			return
+		// Chunking to avoid "maximum payload exceeded"
+		chunkSize := 50
+		for i := 0; i < len(events); i += chunkSize {
+			end := i + chunkSize
+			if end > len(events) {
+				end = len(events)
+			}
+			chunk := events[i:end]
+
+			data, err := json.Marshal(chunk)
+			if err != nil {
+				log.Printf("Error marshaling chunk: %v", err)
+				continue
+			}
+
+			if err := natsClient.Publish("SCHEDULER.events", data); err != nil {
+				log.Printf("Error publishing chunk to NATS: %v", err)
+				continue
+			}
 		}
 
-		if err := natsClient.Publish("SCHEDULER.events", data); err != nil {
-			log.Printf("Error publishing to NATS: %v", err)
-			return
-		}
-
-		log.Printf("Successfully published %d events to NATS", len(events))
+		log.Printf("Successfully published %d events to NATS (in chunks)", len(events))
 	}
 
 	// Init Scheduler

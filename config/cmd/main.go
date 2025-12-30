@@ -9,12 +9,35 @@ import (
 	_ "middleware/config/internal/models"
 	"net/http"
 
+	"middleware/config/internal/services/consumer"
+
 	"github.com/go-chi/chi/v5"
+	"github.com/nats-io/nats.go"
 	"github.com/sirupsen/logrus"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
+	// Init NATS connection
+	nc, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		logrus.Fatalf("Error connecting to NATS: %v", err)
+	}
+	helpers.NatsConn = nc
+	defer nc.Close()
+
+	// Launch Consumer
+	go func() {
+		cons, err := consumer.EventConsumer()
+		if err != nil {
+			logrus.Errorf("Failed to create consumer: %v", err)
+			return
+		}
+		if err := consumer.Consume(cons); err != nil {
+			logrus.Errorf("Failed to start consuming: %v", err)
+		}
+	}()
+
 	r := chi.NewRouter()
 
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
@@ -68,6 +91,14 @@ func init() {
 			PRIMARY KEY (mailId, ressourceId),
 			FOREIGN KEY (mailId) REFERENCES Mail(id) ON DELETE CASCADE,
 			FOREIGN KEY (ressourceId) REFERENCES Ressource(id) ON DELETE CASCADE
+		);`,
+		`CREATE TABLE IF NOT EXISTS Event (
+			uid TEXT PRIMARY KEY,
+			summary TEXT,
+			description TEXT,
+			location TEXT,
+			start DATETIME,
+			end DATETIME
 		);`,
 	}
 	for _, scheme := range schemes {
