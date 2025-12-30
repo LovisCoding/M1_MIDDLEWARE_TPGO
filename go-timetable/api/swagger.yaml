@@ -1,0 +1,113 @@
+basePath: /
+definitions:
+  models.Event:
+    properties:
+      created:
+        type: string
+      description:
+        type: string
+      endTime:
+        type: string
+      id:
+        type: string
+      lastModifiedTime:
+        type: string
+      location:
+        type: string
+      sequence:
+        type: integer
+      startTime:
+        type: string
+      summary:
+        type: string
+    type: object
+  models.User:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+info:
+  contact:
+    email: votre.email@etu.uca.fr
+    name: Votre Nom
+  description: API to manage timetable events.
+  title: middleware/go-timetable
+  version: 1.0.0
+paths:
+  /events:
+    get:
+      description: Get all events from the timetable.
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "500":
+          description: Something went wrong
+      summary: Get all events.
+      tags:
+      - events
+  /events/{id}:
+    get:
+      description: Get a specific event by ID.
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Event'
+        "422":
+          description: Cannot parse id
+        "500":
+          description: Something went wrong
+      summary: Get an event.
+      tags:
+      - events
+  /users:
+    get:
+      description: Get all users.
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Something went wrong
+      summary: Get all users.
+      tags:
+      - users
+  /users/{id}:
+    get:
+      description: Get a user.
+      parameters:
+      - description: User UUID formatted ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "422":
+          description: Cannot parse id
+        "500":
+          description: Something went wrong
+      summary: Get a user.
+      tags:
+      - users
+schemes:
+- http
+swagger: "2.0"
