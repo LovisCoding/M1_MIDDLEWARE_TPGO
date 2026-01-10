@@ -12,7 +12,7 @@ func AddAlert(mailId, resId int64) error {
 	}
 	defer helpers.CloseDB(db)
 
-	_, err = db.Exec("INSERT INTO Alert (mailId, ressourceId) VALUES (?, ?)", mailId, resId)
+	_, err = db.Exec("INSERT OR IGNORE INTO Alert (mailId, ressourceId) VALUES (?, ?)", mailId, resId)
 	return err
 }
 

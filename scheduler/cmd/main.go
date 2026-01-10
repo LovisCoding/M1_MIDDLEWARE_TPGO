@@ -45,7 +45,7 @@ func main() {
 	defer natsClient.Close()
 
 	// Init Stream
-	err = natsClient.InitStream("SCHEDULER", []string{"SCHEDULER.events"})
+	err = natsClient.InitStream("SCHEDULER", []string{"SCHEDULER.>"})
 	if err != nil {
 		log.Printf("Error initializing stream: %v", err)
 	}

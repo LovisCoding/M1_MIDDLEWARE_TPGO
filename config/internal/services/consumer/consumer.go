@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"middleware/config/internal/helpers"
@@ -61,6 +60,17 @@ func Consume(consumer jetstream.Consumer) error {
 		}
 
 		for _, event := range events {
+			logrus.Infof("Processing UID: %s (%s)", event.UID, event.Summary)
+			if event.UID == "ADE60323032352d323032362d5543412d35353335332d302d32" {
+				logrus.Infof("DEBUG: Processing target event. New Location: %s", event.Location)
+				existing, _ := eventsRepo.GetByUID(event.UID)
+				if existing != nil {
+					logrus.Infof("DEBUG: DB Location: %s", existing.Location)
+					logrus.Infof("DEBUG: hasChanged: %v", hasChanged(*existing, event))
+				} else {
+					logrus.Infof("DEBUG: Event not in DB yet")
+				}
+			}
 			// Check for changes
 			existingEvent, err := eventsRepo.GetByUID(event.UID)
 			if err != nil {
@@ -72,14 +82,16 @@ func Consume(consumer jetstream.Consumer) error {
 				if hasChanged(*existingEvent, event) {
 					logrus.Infof("Event %s has changed. Triggering alert.", event.UID)
 
-					alertMsg := fmt.Sprintf("Modification de cours : %s (%s). Nouvelle salle : %s. Nouvel horaire : %s - %s",
-						event.Summary, event.Description, event.Location, event.Start, event.End)
+					// Publish modification event
+					modData, err := json.Marshal(event)
+					if err != nil {
+						logrus.Errorf("Error marshaling modification event: %v", err)
+						continue
+					}
 
-					// Pour simplifier ici, on log juste l'alerte car le service alerts demande un mailID et resourceID précis
-					// Idéalement il faudrait savoir quel groupe est concerné par ce cours.
-					// On peut iterer sur tous les users abonnés aux ressources concernées si on avait cette info.
-
-					logrus.Warnf("ALERT: %s", alertMsg)
+					if err := helpers.NatsConn.Publish("SCHEDULER.modification", modData); err != nil {
+						logrus.Errorf("Error publishing modification event: %v", err)
+					}
 				}
 			} else {
 				logrus.Infof("New event detected: %s", event.UID)

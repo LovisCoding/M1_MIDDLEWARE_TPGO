@@ -1,0 +1,29 @@
+---
+subject: "EDU Middleware - Événement modifié : {{ .Summary }}"
+---
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Événement modifié</title>
+</head>
+
+<body>
+    <p>Bonjour,</p>
+
+    <p>L'événement <strong>{{ .Summary }}</strong> prévu le {{ .Start.Format "02/01/2006 à 15:04" }} a été modifié.</p>
+
+    <ul>
+        <li><strong>Sujet :</strong> {{ .Summary }}</li>
+        <li><strong>Description :</strong> {{ .Description }}</li>
+        <li><strong>Lieu :</strong> {{ .Location }}</li>
+        <li><strong>Début :</strong> {{ .Start.Format "02/01/2006 15:04" }}</li>
+        <li><strong>Fin :</strong> {{ .End.Format "02/01/2006 15:04" }}</li>
+    </ul>
+
+    <p>Merci de prendre connaissance de ces changements.</p>
+    <p>Cordialement,<br>Le service de scolarité</p>
+</body>
+
+</html>

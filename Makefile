@@ -1,4 +1,4 @@
-.PHONY: nats config scheduler run-all stop-all
+.PHONY: nats config scheduler alerter run-all stop-all
 
 # Démarre le serveur NATS (crée le conteneur s'il n'existe pas)
 nats:
@@ -15,10 +15,16 @@ scheduler:
 	@echo "Starting Scheduler..."
 	@cd scheduler && go run cmd/main.go
 
+# Lance l'Alerter
+alerter:
+	@echo "Starting Alerter..."
+	@cd alerter && go run cmd/main.go
+
 # Lance tout en même temps (les logs seront mélangés)
 # Utiliser Ctrl+C pour arrêter
 run-all: nats
 	@echo "Starting all services..."
 	@(cd config && go run cmd/main.go) & \
 	(cd scheduler && go run cmd/main.go) & \
+	(cd alerter && go run cmd/main.go) & \
 	wait

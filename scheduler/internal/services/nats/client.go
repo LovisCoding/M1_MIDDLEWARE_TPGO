@@ -27,11 +27,17 @@ func NewClient(url string) (*Client, error) {
 }
 
 func (c *Client) InitStream(streamName string, subjects []string) error {
-	_, err := c.js.AddStream(&nats.StreamConfig{
+	cfg := &nats.StreamConfig{
 		Name:     streamName,
 		Subjects: subjects,
-	})
-	return err
+	}
+	_, err := c.js.AddStream(cfg)
+	if err != nil {
+		// If stream validation fails (e.g. already exists), try updating it
+		_, errUpdate := c.js.UpdateStream(cfg)
+		return errUpdate
+	}
+	return nil
 }
 
 func (c *Client) Publish(subject string, data []byte) error {
