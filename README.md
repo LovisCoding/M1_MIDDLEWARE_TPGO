@@ -31,6 +31,10 @@ Le projet est divisé en plusieurs microservices autonomes qui communiquent entr
 5. **Infrastructure (NATS)** :
    - Serveur de messagerie (Message Queue) assurant la communication asynchrone entre le Scheduler, le Timetable et l'Alerter.
 
+6. **Frontend (`/frontend`)** :
+   - Application web développée avec **SvelteKit** et **Vite**.
+   - Interface utilisateur permettant de visualiser l'état du système et potentiellement configurer les alertes.
+
 ---
 
 ## 🚀 Prérequis
@@ -38,6 +42,7 @@ Le projet est divisé en plusieurs microservices autonomes qui communiquent entr
 Avant de lancer le projet, assurez-vous d'avoir installé :
 
 - **Go** (version 1.21 ou supérieure recommandée)
+- **Node.js** (pour lancer le frontend)
 - **Docker** (pour lancer le serveur NATS)
 - **Make** (pour utiliser les commandes d'automatisation)
 
@@ -73,6 +78,9 @@ Vous pouvez ouvrir plusieurs terminaux et lancer chaque brique séparément pour
 
 - **Terminal 3 (Alerter) :**
     make alerter
+
+- **Terminal 4 (Frontend) :**
+    make frontend
 
 ### 3. Arrêter le projet
 
