@@ -1,4 +1,4 @@
-.PHONY: nats config scheduler alerter run-all stop-all
+.PHONY: nats config scheduler alerter frontend run-all stop-all
 
 # Démarre le serveur NATS (crée le conteneur s'il n'existe pas)
 nats:
@@ -27,4 +27,10 @@ run-all: nats
 	@(cd config && go run cmd/main.go) & \
 	(cd scheduler && go run cmd/main.go) & \
 	(cd alerter && go run cmd/main.go) & \
+	(cd frontend && npm run dev) & \
 	wait
+
+# Lance le Frontend
+frontend:
+	@echo "Starting Frontend..."
+	@cd frontend && npm run dev
