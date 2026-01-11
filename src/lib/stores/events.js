@@ -1,4 +1,4 @@
-import {writable, get} from "svelte/store";
+import {writable} from "svelte/store";
 import axios from "axios";
 
 export const events = writable([])
@@ -7,19 +7,15 @@ export const eventsError = writable("")
 const apiBaseUrl = "/timetable_api/events"
 
 /*
-***** DATA FORMAT EXAMPLE
+***** BACKEND DATA FORMAT (Swagger)
 * {
-*  "id": "62a2beca-26cf-45bf-aa82-4cf5b14922fd",
-*  "agendaIds": [
-*     "d5c60e7a-10cd-4aec-9ea5-96d071ba824b"
-*  ],
-*  "uid": "ADE60323032342d323032352d5543412d36303334342d302d32",
-*  "description": "\\n\\nM1 GROUPE 1 langue\\nPAILLOUX MARIE\\n\\n(Updated :26/11/202 4 09:51)",
-*  "name": "TD Entrepôt de données - G1",
-*  "start": "2025-01-23T15:45:00+01:00",
-*  "end": "2025-01-23T17:45:00+01:00",
-*  "location": "IS_A104",
-*  "lastUpdate": "2024-11-26T09:51:00+01:00"
+* "id": "...",
+* "summary": "TD Entrepôt de données - G1",
+* "location": "IS_A104",
+* "description": "...",
+* "startTime": "...",
+* "endTime": "...",
+* "resourceIds": [...]
 * }
 */
 
@@ -27,7 +23,23 @@ export function getEvents() {
     eventsError.set("")
     axios.get(`${apiBaseUrl}`)
         .then((res) => {
-            events.set(res.data)
+            // Sécurité : on vérifie que res.data est bien un tableau
+            if (Array.isArray(res.data)) {
+                const mappedEvents = res.data.map(e => ({
+                    id: e.id,
+                    name: e.summary, 
+                    description: e.description,
+                    location: e.location,
+                    start: e.startTime,
+                    end: e.endTime,
+                    // On s'assure que agendaIds est un tableau
+                    agendaIds: Array.isArray(e.resourceIds) ? e.resourceIds : [] 
+                }))
+                events.set(mappedEvents)
+            } else {
+                console.error("Format de données inattendu", res.data);
+                events.set([]);
+            }
         })
         .catch((err) => {
             console.log("An error has occurred while retrieving events")

@@ -2,41 +2,31 @@
     import {events, eventsError, getEvents} from "$lib/stores/events.js";
     import {onMount} from "svelte";
     import {SvelteMap} from "svelte/reactivity";
-    import {getAgenda} from "$lib/stores/agendas.js";
+    import {getResource} from "$lib/stores/resources.js";
     import Calendar from '@event-calendar/core';
     import DayGrid from '@event-calendar/day-grid';
 
-
     const pickColorsFrom = [
-        '#F6DC00',
-        '#FFFFFF',
-        '#AB69AD',
-        '#FAC000',
-        '#E7A2FD',
-        '#DE9800',
+        '#F6DC00', '#FFFFFF', '#AB69AD', '#FAC000', '#E7A2FD', '#DE9800',
     ]
     let agendaColors = new SvelteMap()
-    let eventsAgendas = new SvelteMap()
+    let eventsResources = new SvelteMap()
     let plugins = [DayGrid];
-    let options = {
+
+    let options = $state({
         view: 'dayGridMonth',
         events: [],
         editable: false,
         eventContent: (info) => {
-            let titles = info.event.title.split('|')
-            let desc = titles[1].replace(/^[\\n]+/g,'').replace(/\\n/g,'&#013;')
-            return {html: `<div style="${getEventColors(info.event)}"><span class="fs-5 me-2 fw-bold">${info.event.start.getHours()}:${info.event.start.getMinutes()}</span><span class="fs-5" title="${desc}">${titles[0]} <br/> <i class="fs-6">${titles[2]}</i></span></div>`}
+            let desc = info.event.extendedProps.description || "";
+            let loc = info.event.extendedProps.location || "";
+            return {html: `<div style="${getEventColors(info.event)}">
+                <span class="fs-5 me-2 fw-bold">${info.event.start.getHours()}:${String(info.event.start.getMinutes()).padStart(2, '0')}</span>
+                <span class="fs-5" title="${desc}">${info.event.title} <br/> <i class="fs-6">${loc}</i></span>
+            </div>`}
         },
-        eventBackgroundColor : '#593196'
-    };
-    // maybe see
-    //   eventClick
-    //   eventMouseEnter / eventMouseLeave for hovering event
-    //   loading
-    //   pointer : enables mouse pointer
-    //   Methodsto : invoke calendar methods
-    //   eventBackgroundColor can only be string :/
-
+        eventBackgroundColor : '#593196' // Le fond est violet
+    });
 
     onMount(() => {
         getEvents()
@@ -46,21 +36,27 @@
         let colors = []
         let color = ""
 
-        event.resourceIds.forEach((r) => {
+        let rIds = event.extendedProps.resourceIds || [];
+        
+        // CORRECTION ICI : Texte en BLANC (#FFFFFF) pour contraster avec le fond violet
+        if (rIds.length === 0) {
+             return `color: #FFFFFF;`; 
+        }
+
+        rIds.forEach((r) => {
             if(!agendaColors.get(r)){
-                // pick new color
-                agendaColors.set(r, pickColorsFrom[agendaColors.size])
+                agendaColors.set(r, pickColorsFrom[agendaColors.size % pickColorsFrom.length])
             }
             colors.push(agendaColors.get(r))
         })
+   
         if(colors.length > 1){
             let percent = 100 / colors.length
-            // background-image: linear-gradient(red 50%, blue 50%);
             color = "color: transparent;background-clip: text;background-image: linear-gradient(to right,"
             colors.forEach((c) => {
                 color += `${c} ${percent}%,`
             })
-            color = color.substring(0, color.length - 1); // remove last ','
+            color = color.substring(0, color.length - 1);
             color += ");"
         } else {
             color = `color: ${colors[0]};`
@@ -69,42 +65,35 @@
     }
 
     events.subscribe((values) => {
-        let list = []
-        values.forEach((value) => {
-            // Set event for calendar component
-            let e = {
-                id: value.id,
-                //allDay: false,
-                start: new Date(value.start),
-                end: new Date(value.end),
-                title: `${value.name}|${value.description}|${value.location}`, //todo see with desc
-                //editable: false,
-                //startEditable: false,
-                //durationEditable: false,
-                resourceIds: value.agendaIds, //todo see ??
-                //display: 'auto',
-                //backgroundColor: '', // see also eventBackgroundColor
-                //textColor: '', // see also eventTextColor
-                //color: '', // alias for backgrounColor
-                //classNames: [], // see also eventClassNames
-                //styles: [],
-                //extendedProps: {},
-            }
-            list.push(e)
-
-            // Get agendas linked to event
-            // really not optimized
-            value.agendaIds.forEach((rId) => {
-                if(!eventsAgendas.get(rId)){
-                    getAgenda(rId)
-                        .then((data) => {
-                            eventsAgendas.set(rId, data)
-                        })
-                        .catch(()=>{})
+        const eventsList = [];
+        
+        if (Array.isArray(values)) {
+            values.forEach((value) => {
+                let e = {
+                    id: value.id,
+                    start: new Date(value.start),
+                    end: new Date(value.end),
+                    title: value.name,
+                    extendedProps: {
+                        description: value.description,
+                        location: value.location,
+                        resourceIds: value.agendaIds 
+                    }
                 }
-            })
-        })
-        options.events = list;
+                eventsList.push(e);
+
+                (value.agendaIds || []).forEach((rId) => {
+                    if(!eventsResources.get(rId)){
+                        getResource(rId)
+                            .then((data) => {
+                                eventsResources.set(rId, data)
+                            })
+                            .catch(()=>{})
+                    }
+                })
+            });
+        }
+        options.events = eventsList;
     })
 </script>
 
@@ -116,11 +105,11 @@
         </div>
     {/if}
 
-    <div class="d-flex mb-4 justify-content-center">
+    <div class="d-flex mb-4 justify-content-center flex-wrap">
         {#each agendaColors as [r, c]}
-            <div class="d-flex me-3">
-                <span class="p-3 me-2" style="{`background-color: ${c};`}"></span>
-                <span>{eventsAgendas.get(r) ? eventsAgendas.get(r).name : r}</span>
+            <div class="d-flex me-3 mb-2 align-items-center">
+                <span class="p-3 me-2 border rounded" style="{`background-color: ${c};`}"></span>
+                <span>{eventsResources.get(r) ? eventsResources.get(r).name : r}</span>
             </div>
         {/each}
     </div>
